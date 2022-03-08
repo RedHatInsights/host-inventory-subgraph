@@ -120,7 +120,7 @@ async function register(schema: string) {
         port: config.get("SchemaRegistry.Port")
     }
     const baseUrl = `${sr.protocol}://${sr.hostname}:${sr.port}`;
-    let artifactId = `xjoinindexpipeline.inventory.hosts.tags.test`;
+    const artifactId = config.get("GraphQLSchemaName");
 
     try {
         await got.get(`${baseUrl}/apis/registry/v2/groups/default/artifacts/${artifactId}`);
@@ -352,24 +352,6 @@ async function hostTagsResolver(parent: any, args: any, context: any): Promise<R
             total: result.body.aggregations.tags.buckets.length
         }
     };
-
-
-    /*
-    return {
-        data: [{
-            tag: {
-                namespace: 'ns',
-                key: 'key',
-                value: 'val'
-            },
-            count: 1
-        }],
-        meta: {
-            count: 1,
-            total: 1
-        }
-    };
-     */
 }
 
 start();

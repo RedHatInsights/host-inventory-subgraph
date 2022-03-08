@@ -11,5 +11,6 @@
     "Hostname": "localhost",
     "Port": "1080"
   },
+  "GraphQLSchemaName": "xjoin.inventory.hosts.graphql",
   "LogLevel": "debug"
 }

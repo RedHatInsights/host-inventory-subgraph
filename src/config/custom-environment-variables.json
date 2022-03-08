@@ -11,5 +11,6 @@
     "Password": "ELASTIC_SEARCH_PASSWORD",
     "Index": "ELASTIC_SEARCH_INDEX"
   },
+  "GraphQLSchemaName": "GRAPHQL_SCHEMA_NAME",
   "LogLevel": "LOG_LEVEL"
 }
