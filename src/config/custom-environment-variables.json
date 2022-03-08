@@ -1,0 +1,15 @@
+{
+  "Port": "PORT",
+  "SchemaRegistry": {
+    "Protocol": "SCHEMA_REGISTRY_PROTOCOL",
+    "Hostname": "SCHEMA_REGISTRY_HOSTNAME",
+    "Port": "SCHEMA_REGISTRY_PORT"
+  },
+  "ElasticSearch": {
+    "URL": "ELASTIC_SEARCH_URL",
+    "Username": "ELASTIC_SEARCH_USERNAME",
+    "Password": "ELASTIC_SEARCH_PASSWORD",
+    "Index": "ELASTIC_SEARCH_INDEX"
+  },
+  "LogLevel": "LOG_LEVEL"
+}
