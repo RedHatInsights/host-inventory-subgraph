@@ -7,6 +7,7 @@ import morganMiddleware from "./middleware/morgan";
 import got from "got";
 import {Client} from "@elastic/elasticsearch";
 import * as _ from 'lodash';
+import { print } from 'graphql';
 
 async function start() {
     const app = express();
@@ -89,7 +90,7 @@ async function start() {
         }
     `;
 
-    await register(typeDefs.toString());
+    await register(print(typeDefs));
 
     const resolvers = {
         Query: {
