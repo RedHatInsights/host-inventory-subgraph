@@ -6,8 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "clean": "rm -r dist",
-    "compile": "npx tsc",
-    "start": "tsc && NODE_CONFIG_DIR=dist/config node dist/index.js"
+    "compile": "npx tsc && cp src/schema.graphql dist/schema.graphql",
+    "start": "tsc && cp src/schema.graphql dist/schema.graphql && NODE_CONFIG_DIR=dist/config node dist/index.js"
   },
   "author": "ckyrouac@redhat.com",
   "license": "MIT",

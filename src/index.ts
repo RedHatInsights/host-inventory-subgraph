@@ -7,90 +7,14 @@ import morganMiddleware from "./middleware/morgan";
 import got from "got";
 import {Client} from "@elastic/elasticsearch";
 import * as _ from 'lodash';
-import { print } from 'graphql';
+import { readFileSync } from 'fs';
+import { join } from "path";
 
 async function start() {
     const app = express();
 
-    const typeDefs = gql`
-        type Query {
-            hostTags (
-                #                hostFilter: HostFilter, //TODO
-                filter: TagAggregationFilter,
-                limit: Int = 10,
-                offset: Int = 0,
-                order_by: HOST_TAGS_ORDER_BY = count,
-                order_how: ORDER_DIR = DESC
-            ): HostTags
-        }
-
-        enum ORDER_DIR {
-            ASC,
-            DESC
-        }
-
-        enum HOST_TAGS_ORDER_BY {
-            tag,
-            count
-        }
-
-        input TagAggregationFilter {
-            """
-            Limits the aggregation to tags that match the given search term.
-            The search term is a regular exression that operates on a string representation of a tag.
-            The string representation has a form of "namespace/key=value" i.e. the segments are concatenated together using "=" and "/", respectively.
-            There is no expecing of the control characters in the segments.
-            As a result, "=" and "/" appear in every tag.
-            """
-            search: FilterStringWithRegex
-        }
-
-        """
-        String field filter that allows filtering based on exact match or using regular expression.
-        """
-        input FilterStringWithRegex {
-            """
-            Compares the document field with the provided value.
-            If \`null\` is provided then documents where the given field does not exist are returned.
-            """
-            eq: String
-
-            """
-            Matches the document field against the provided regular expression.
-            """
-            regex: String
-        }
-
-        type HostTags {
-            data: [TagInfo]!
-            meta: CollectionMeta!
-        }
-
-        type CollectionMeta {
-            "number of returned results"
-            count: Int!
-            "total number of entities matching the query"
-            total: Int!
-        }
-
-        type StructuredTag {
-            namespace: String,
-            key: String!,
-            value: String
-        }
-
-        type Tags {
-            data: [StructuredTag]!
-            meta: CollectionMeta!
-        }
-
-        type TagInfo {
-            tag: StructuredTag!
-            count: Int!
-        }
-    `;
-
-    await register(print(typeDefs));
+    const typeDefs = readFileSync(join(__dirname, './schema.graphql'), 'utf-8');
+    await register(typeDefs);
 
     const resolvers = {
         Query: {
@@ -99,7 +23,10 @@ async function start() {
     };
 
     const server = new ApolloServer({
-        schema: buildFederatedSchema({typeDefs, resolvers}),
+        schema: buildFederatedSchema({
+            typeDefs: gql(typeDefs),
+            resolvers: resolvers
+        }),
     });
 
     await server.start();
