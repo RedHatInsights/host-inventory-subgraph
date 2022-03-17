@@ -1,188 +1,56 @@
 import {buildFederatedSchema} from '@apollo/federation';
-import {ApolloError, ApolloServer, gql, UserInputError} from 'apollo-server-express';
+import {ApolloServer, gql} from 'apollo-server-express';
 import express from 'express';
 import config from 'config';
-import Logger from "./logging/logger";
-import morganMiddleware from "./middleware/morgan";
-import got from "got";
 import {Client} from "@elastic/elasticsearch";
-import * as _ from 'lodash';
 import { readFileSync } from 'fs';
-import { join } from "path";
+import {
+    SchemaRegistry,
+    morganMiddleware,
+    Logger,
+    ElasticSearchError,
+    ResultWindowError,
+    checkLimit, checkOffset, defaultValue, extractPage
+} from "xjoin-subgraph-utils";
 
 async function start() {
     const app = express();
 
-    const typeDefs = readFileSync(join(__dirname, './schema.graphql'), 'utf-8');
-    await register(typeDefs);
+    //load the GraphQL schema with custom queries
+    const graphqlSchema = readFileSync(new URL('./schema.graphql', import.meta.url).pathname, 'utf-8');
+
+    //register the GraphQL schema with the ApiCurio schema registry
+    const sr = new SchemaRegistry({
+        protocol: config.get('SchemaRegistry.Protocol'),
+        hostname: config.get('SchemaRegistry.Hostname'),
+        port: config.get('SchemaRegistry.Port')
+    });
+    await sr.registerGraphQLSchema(config.get('GraphQLSchemaName'), graphqlSchema)
 
     const resolvers = {
         Query: {
-            hostTags: hostTagsResolver
+            HostTags: hostTagsResolver
         }
     };
 
+    //start the Apollo GraphQL server
     const server = new ApolloServer({
         schema: buildFederatedSchema({
-            typeDefs: gql(typeDefs),
+            typeDefs: gql(graphqlSchema),
             resolvers: resolvers
         }),
     });
-
     await server.start();
 
+    //add a middleware to log each request
     const router = express.Router();
     app.use(router);
     app.use(morganMiddleware);
     server.applyMiddleware({app});
 
-    app.listen({port: config.get("Port")}, () => {
+    app.listen({port: config.get('Port')}, () => {
         Logger.info(`Server ready at http://localhost:${config.get("Port")}/graphql`);
     });
-}
-
-async function register(schema: string) {
-    const sr = {
-        protocol: config.get("SchemaRegistry.Protocol"),
-        hostname: config.get("SchemaRegistry.Hostname"),
-        port: config.get("SchemaRegistry.Port")
-    }
-    const baseUrl = `${sr.protocol}://${sr.hostname}:${sr.port}`;
-    const artifactId = config.get("GraphQLSchemaName");
-
-    try {
-        await got.get(`${baseUrl}/apis/registry/v2/groups/default/artifacts/${artifactId}`);
-
-        await got.post(
-            `${sr.protocol}://${sr.hostname}:${sr.port}/apis/registry/v2/groups/default/artifacts/${artifactId}/versions`,
-            {
-                body: schema,
-                headers: {
-                    'Content-Type': 'application/graphql',
-                    'X-Registry-ArtifactType': 'GRAPHQL'
-                }
-            });
-    } catch (e) {
-        Logger.error('Unable to create graphql schema');
-        throw e;
-    }
-}
-
-export function checkMin(min: number, value: number | null | undefined): void {
-    if (value === null || value === undefined) {
-        return;
-    }
-
-    if (value < min) {
-        throw new UserInputError(`value must be ${min} or greater (was ${value})`);
-    }
-}
-
-export function checkMax(max: number, value: number | null | undefined): void {
-    if (value === null || value === undefined) {
-        return;
-    }
-
-    if (value > max) {
-        throw new UserInputError(`value must be ${max} or less (was ${value})`);
-    }
-}
-
-export function checkLimit(limit: number | null | undefined): void {
-    checkMin(0, limit);
-    checkMax(100, limit);
-}
-
-export function checkOffset(offset: number | null | undefined): void {
-    checkMin(0, offset);
-}
-
-export function defaultValue(value: number | undefined | null, def: number): number {
-    if (value === undefined || value === null) {
-        return def;
-    }
-
-    return value;
-}
-
-export function extractPage(list: any, limit: number, offset: number): any {
-    return list.slice(offset, offset + limit);
-}
-
-const TAG_ORDER_BY_MAPPING: { [key: string]: string } = {
-    count: '_count',
-    tag: '_key'
-};
-
-export async function runQuery(query: any, id: string): Promise<any> {
-    // log.trace(query, 'executing query');
-
-    const client = new Client({
-        node: config.get('ElasticSearch.URL'),
-        auth: {
-            username: config.get('ElasticSearch.Username'),
-            password: config.get('ElasticSearch.Password')
-        }
-    });
-
-    try {
-        return await client.search(query);
-        // log.trace(result, 'query finished');
-        // esResponseHistogram.labels(id).observe(result.body.took / 1000); // ms -> seconds
-    } catch (err) {
-        console.error(err);
-
-        if (_.get(err, 'meta.body.error.root_cause[0].reason', '').startsWith('Result window is too large')) {
-            // check if the request should have succeeded (eg. the requested page
-            // contains hosts that should be able to be queried)
-            const requestedHostNumber = query.body.from;
-
-            query.body.from = 0;
-            query.body.size = 0;
-
-            const countQueryRes = await client.search(query);
-
-            const hits = countQueryRes.body.hits.total.value;
-
-            // only return the request window error if the requested page should
-            // have contained at least one host
-            if (hits >= requestedHostNumber) {
-                throw new ResultWindowError(err);
-            }
-
-            // return an empty response (same behavior as when there is not host
-            // at the specified offset within result window)
-            return countQueryRes;
-        }
-
-        throw new ElasticSearchError(err);
-    }
-}
-
-export class ElasticSearchError extends ApolloError {
-    constructor(originalError: any, message = 'Elastic search error', code = 'ELASTIC_SEARCH_ERROR') {
-        super(message, code, {originalError});
-    }
-}
-
-export class ResultWindowError extends ElasticSearchError {
-    constructor(originalError: any,
-                message = 'Request could not be completed because the page is too deep',
-                code = 'REQUEST_WINDOW_ERROR')
-    {
-        super(originalError, message, code);
-    }
-}
-
-export function buildFilterQuery(filter: any | null | undefined, account_number: string): any {
-    return {
-        bool: {
-            filter: [
-                {term: {'host.account': 'test'}}, // implicit filter based on x-rh-identity
-                // ...(filter ? resolveFilter(filter) : [])
-            ]
-        }
-    };
 }
 
 async function hostTagsResolver(parent: any, args: any, context: any): Promise<Record<string, unknown>> {
@@ -192,9 +60,17 @@ async function hostTagsResolver(parent: any, args: any, context: any): Promise<R
     const limit = defaultValue(args.limit, 10);
     const offset = defaultValue(args.offset, 0);
 
+    //buildFilterQuery(args.hostFilter, context.account_number), //TODO
     const body: any = {
         _source: [],
-        query: buildFilterQuery(args.hostFilter, context.account_number), //TODO
+        query: {
+            bool: {
+                filter: [
+                    {term: {'host.account': 'test'}}, // implicit filter based on x-rh-identity
+                    // ...(filter ? resolveFilter(filter) : [])
+                ]
+            }
+        },
         size: 0,
         aggs: {
             tags: {
@@ -232,7 +108,7 @@ async function hostTagsResolver(parent: any, args: any, context: any): Promise<R
         offset
     );
 
-    const data = _.map(page, bucket => {
+    const data = page.map(bucket => {
 
         function split(value: string, delimiter: string) {
             const index = value.indexOf(delimiter);
@@ -261,11 +137,15 @@ async function hostTagsResolver(parent: any, args: any, context: any): Promise<R
         // This should rarely happen but if it does we can solve that by issuing another ES query to clear up the ambiguity
         const [key, value] = split(rest, '=');
 
-        const tag = _.mapValues({
-            namespace,
-            key,
-            value
-        }, normalizeTag);
+        const tag = Object.fromEntries(Object.entries({namespace, key, value}).map((keyValue) => {
+            const key = keyValue[0]
+            const value = keyValue[1]
+            if (value === '' && key !== 'key') {
+                return [key,null];
+            }
+
+            return [key,value];
+        }))
 
         return {
             tag,
@@ -280,6 +160,57 @@ async function hostTagsResolver(parent: any, args: any, context: any): Promise<R
             total: result.body.aggregations.tags.buckets.length
         }
     };
+}
+
+const TAG_ORDER_BY_MAPPING: { [key: string]: string } = {
+    count: '_count',
+    tag: '_key'
+};
+
+export async function runQuery(query: any, id: string): Promise<any> {
+    Logger.debug('executing query', ['query', query]);
+
+    const client = new Client({
+        node: config.get('ElasticSearch.URL'),
+        auth: {
+            username: config.get('ElasticSearch.Username'),
+            password: config.get('ElasticSearch.Password')
+        }
+    });
+
+    try {
+        return await client.search(query);
+        // log.trace(result, 'query finished');
+        // esResponseHistogram.labels(id).observe(result.body.took / 1000); // ms -> seconds
+    } catch (err) {
+        Logger.error(err);
+
+        const reason = err.meta.body.error.root_cause[0].reason || ''
+        if (reason.startsWith('Result window is too large')) {
+            // check if the request should have succeeded (eg. the requested page
+            // contains hosts that should be able to be queried)
+            const requestedHostNumber = query.body.from;
+
+            query.body.from = 0;
+            query.body.size = 0;
+
+            const countQueryRes = await client.search(query);
+
+            const hits = countQueryRes.body.hits.total.value;
+
+            // only return the request window error if the requested page should
+            // have contained at least one host
+            if (hits >= requestedHostNumber) {
+                throw new ResultWindowError(err);
+            }
+
+            // return an empty response (same behavior as when there is no host
+            // at the specified offset within result window)
+            return countQueryRes;
+        }
+
+        throw new ElasticSearchError(err);
+    }
 }
 
 start();

@@ -2,11 +2,16 @@
   "name": "host-inventory-subgraph",
   "version": "0.0.1",
   "description": "Custom XJoin subgraph used to query HBI tag enumerations",
-  "main": "src/index.ts",
+  "exports": "./dist/index.js",
+  "engines": {
+    "node": "^12.20.0 || ^14.13.1 || >=16.0.0"
+  },
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "clean": "rm -r dist",
-    "compile": "npx tsc && cp src/schema.graphql dist/schema.graphql",
+    "build": "npx tsc",
+    "postbuild": "cp -r src/config dist && cp src/schema.graphql dist/schema.graphql",
     "start": "tsc && cp src/schema.graphql dist/schema.graphql && NODE_CONFIG_DIR=dist/config node dist/index.js"
   },
   "author": "ckyrouac@redhat.com",
@@ -16,9 +21,9 @@
     "url": "git+https://github.com/RedhatInsights/host-inventory-subgraph.git"
   },
   "bugs": {
-    "url": "https://github.com/RedhatInsights/host-inventory-subgraph/issues"
+    "url": "https://github.com/RedhatInsights/xjoin-subgraph-template/issues"
   },
-  "homepage": "https://github.com/RedhatInsights/host-inventory-subgraph#readme",
+  "homepage": "https://github.com/RedhatInsights/xjoin-subgraph-template#readme",
   "dependencies": {
     "@apollo/federation": "^0.29.1",
     "@elastic/elasticsearch": "^7.16.0",
@@ -26,16 +31,19 @@
     "@types/lodash": "^4.14.179",
     "@types/morgan": "^1.9.3",
     "apollo-server": "^3.5.0",
-    "apollo-server-express": "^3.5.0",
+    "apollo-server-express": "^3.6.4",
     "apollo-server-types": "^3.4.0",
     "config": "^3.3.6",
     "express": "^4.17.1",
     "express-graphql": "^0.12.0",
     "got": "^11.8.3",
     "graphql": "^15.7.2",
-    "lodash": "^4.17.21",
     "morgan": "^1.10.0",
     "typescript": "^4.5.2",
-    "winston": "^3.4.0"
+    "winston": "^3.4.0",
+    "xjoin-subgraph-utils": "^0.0.8"
+  },
+  "devDependencies": {
+    "cpy-cli": "^4.1.0"
   }
 }
