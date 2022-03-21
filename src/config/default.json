@@ -12,5 +12,6 @@
     "Port": "1080"
   },
   "GraphQLSchemaName": "xjoin.inventory.hosts.graphql",
-  "LogLevel": "debug"
+  "LogLevel": "debug",
+  "AvroSchema": "{\"type\": \"record\", \"name\": \"stub\", \"fields\": []}"
 }

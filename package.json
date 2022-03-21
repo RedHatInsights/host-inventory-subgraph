@@ -26,22 +26,22 @@
   "homepage": "https://github.com/RedhatInsights/xjoin-subgraph-template#readme",
   "dependencies": {
     "@apollo/federation": "^0.29.1",
-    "@elastic/elasticsearch": "^7.16.0",
+    "@elastic/elasticsearch": "^7.13.0",
     "@types/config": "^0.0.40",
-    "@types/lodash": "^4.14.179",
     "@types/morgan": "^1.9.3",
-    "apollo-server": "^3.5.0",
+    "apollo-server": "^3.6.4",
     "apollo-server-express": "^3.6.4",
-    "apollo-server-types": "^3.4.0",
+    "apollo-server-types": "^3.5.1",
     "config": "^3.3.6",
     "express": "^4.17.1",
     "express-graphql": "^0.12.0",
     "got": "^11.8.3",
     "graphql": "^15.7.2",
     "morgan": "^1.10.0",
+    "reflect-metadata": "^0.1.13",
     "typescript": "^4.5.2",
     "winston": "^3.4.0",
-    "xjoin-subgraph-utils": "^0.0.8"
+    "xjoin-subgraph-utils": "github:RedHatInsights/xjoin-subgraph-utils#bug-fix"
   },
   "devDependencies": {
     "cpy-cli": "^4.1.0"

@@ -12,5 +12,6 @@
     "Index": "ELASTIC_SEARCH_INDEX"
   },
   "GraphQLSchemaName": "GRAPHQL_SCHEMA_NAME",
-  "LogLevel": "LOG_LEVEL"
+  "LogLevel": "LOG_LEVEL",
+  "AvroSchema": "AVRO_SCHEMA"
 }

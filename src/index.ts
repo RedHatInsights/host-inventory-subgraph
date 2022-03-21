@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import {buildFederatedSchema} from '@apollo/federation';
 import {ApolloServer, gql} from 'apollo-server-express';
 import express from 'express';
@@ -10,11 +11,15 @@ import {
     Logger,
     ElasticSearchError,
     ResultWindowError,
-    checkLimit, checkOffset, defaultValue, extractPage
+    checkLimit, checkOffset, defaultValue, extractPage, GraphqlSchema, AvroSchemaParser, graphqlFiltersToESFilters
 } from "xjoin-subgraph-utils";
 
 async function start() {
     const app = express();
+
+    //load the core graphql schema (the graphql schema that is generated from an avro schema)
+    const avroSchemaParser = new AvroSchemaParser(config.get("AvroSchema"));
+    const coreGraphqlSchema: GraphqlSchema = avroSchemaParser.convertToGraphQL();
 
     //load the GraphQL schema with custom queries
     const graphqlSchema = readFileSync(new URL('./schema.graphql', import.meta.url).pathname, 'utf-8');
@@ -29,7 +34,7 @@ async function start() {
 
     const resolvers = {
         Query: {
-            HostTags: hostTagsResolver
+            HostTags: hostTagsResolver.bind({coreGraphqlSchema})
         }
     };
 
@@ -53,7 +58,7 @@ async function start() {
     });
 }
 
-async function hostTagsResolver(parent: any, args: any, context: any): Promise<Record<string, unknown>> {
+async function hostTagsResolver(this: any, parent: any, args: any, context: any): Promise<Record<string, unknown>> {
     checkLimit(args.limit);
     checkOffset(args.offset);
 
@@ -61,14 +66,14 @@ async function hostTagsResolver(parent: any, args: any, context: any): Promise<R
     const offset = defaultValue(args.offset, 0);
 
     //buildFilterQuery(args.hostFilter, context.account_number), //TODO
+    const esFilters = []
+    const filter = graphqlFiltersToESFilters(['host'], args.hostFilter, esFilters, this.coreGraphqlSchema);
+
     const body: any = {
         _source: [],
         query: {
             bool: {
-                filter: [
-                    {term: {'host.account': 'test'}}, // implicit filter based on x-rh-identity
-                    // ...(filter ? resolveFilter(filter) : [])
-                ]
+                filter
             }
         },
         size: 0,
@@ -179,8 +184,9 @@ export async function runQuery(query: any, id: string): Promise<any> {
     });
 
     try {
-        return await client.search(query);
-        // log.trace(result, 'query finished');
+        const result = await client.search(query);
+        Logger.debug('query finished', result);
+        return result;
         // esResponseHistogram.labels(id).observe(result.body.took / 1000); // ms -> seconds
     } catch (err) {
         Logger.error(err);
