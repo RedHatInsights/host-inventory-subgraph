@@ -1,12 +1,20 @@
 type Query {
     HostTags (
         hostFilter: HostFilter,
-        filter: TagAggregationFilter,
+        filter: TagEnumerationFilter,
         limit: Int = 10,
         offset: Int = 0,
         order_by: HOST_TAGS_ORDER_BY = count,
         order_how: ORDER_DIR = DESC
     ): HostTags
+
+    HostOperatingSystems (
+        hostFilter: HostFilter,
+        limit: Int = 10,
+        offset: Int = 0,
+        order_by: HOST_OPERATING_SYSTEM_ORDER_BY = count,
+        order_how: ORDER_DIR = DESC
+    ): HostOperatingSystems
 }
 
 "Stub of generated HostFilter"
@@ -14,12 +22,13 @@ input HostFilter {
     id: FilterString
 }
 
+"Tag entities"
 enum HOST_TAGS_ORDER_BY {
     tag,
     count
 }
 
-input TagAggregationFilter {
+input TagEnumerationFilter {
     """
     Limits the aggregation to tags that match the given search term.
     The search term is a regular exression that operates on a string representation of a tag.
@@ -41,13 +50,30 @@ type StructuredTag {
     value: String
 }
 
-type Tags {
-    data: [StructuredTag]!
+type TagInfo {
+    tag: StructuredTag!
+    count: Int!
+}
+
+"Operating System Entities"
+enum HOST_OPERATING_SYSTEM_ORDER_BY {
+    operating_system,
+    count
+}
+
+type HostOperatingSystems {
+    data: [OperatingSystemInfo]!
     meta: CollectionMeta!
 }
 
-type TagInfo {
-    tag: StructuredTag!
+type StructuredOperatingSystem {
+    name: String!,
+    major: String!,
+    minor: String!
+}
+
+type OperatingSystemInfo {
+    operating_system: StructuredOperatingSystem!
     count: Int!
 }
 
