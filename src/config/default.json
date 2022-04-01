@@ -13,5 +13,5 @@
   },
   "GraphQLSchemaName": "xjoin.inventory.hosts.graphql",
   "LogLevel": "debug",
-  "AvroSchema": "{\"type\": \"record\", \"name\": \"stub\", \"fields\": []}"
+  "AvroSchema": "{\"type\": \"record\", \"name\": \"stub\", \"fields\": [{\"name\": \"stub field\"}]}"
 }

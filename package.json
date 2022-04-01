@@ -1,14 +1,14 @@
 {
   "name": "host-inventory-subgraph",
   "version": "0.0.1",
-  "description": "Custom XJoin subgraph used to query HBI tag enumerations",
+  "description": "Custom XJoin subgraph for the host-inventory service",
   "exports": "./dist/index.js",
   "engines": {
     "node": "^12.20.0 || ^14.13.1 || >=16.0.0"
   },
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "npm run build && NODE_OPTIONS=--experimental-vm-modules NODE_CONFIG_DIR=dist/config npx jest",
     "clean": "rm -r dist",
     "build": "npx tsc",
     "postbuild": "cp -r src/config dist && cp src/schema.graphql dist/schema.graphql",
@@ -26,7 +26,7 @@
   "homepage": "https://github.com/RedhatInsights/xjoin-subgraph-template#readme",
   "dependencies": {
     "@apollo/federation": "^0.29.1",
-    "@elastic/elasticsearch": "^7.13.0",
+    "@elastic/elasticsearch": "7.13.0",
     "@types/config": "^0.0.40",
     "@types/morgan": "^1.9.3",
     "apollo-server": "^3.6.4",
@@ -41,9 +41,13 @@
     "reflect-metadata": "^0.1.13",
     "typescript": "^4.5.2",
     "winston": "^3.4.0",
-    "xjoin-subgraph-utils": "^0.0.12"
+    "xjoin-subgraph-utils": "github:RedHatInsights/xjoin-subgraph-utils#master"
   },
   "devDependencies": {
-    "cpy-cli": "^4.1.0"
+    "@types/jest": "^27.4.1",
+    "cpy-cli": "^4.1.0",
+    "jest": "^27.5.1",
+    "nock": "^13.2.4",
+    "ts-jest": "^27.1.3"
   }
 }
