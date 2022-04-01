@@ -190,10 +190,9 @@ export async function enumerationResolver(args: enumerationResolverArgs): Promis
     const limit = defaultValue(args.limit, 10);
     const offset = defaultValue(args.offset, 0);
 
-    const esFilters = []
     args.body.query = {
         bool: {
-            filter: graphqlFiltersToESFilters(['host'], args.hostFilter, esFilters, args.coreGraphqlSchema)
+            filter: graphqlFiltersToESFilters(['host'], args.hostFilter, args.coreGraphqlSchema)
         }
     };
     args.body['_source'] = [];
