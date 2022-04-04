@@ -7,7 +7,7 @@ import {
 } from "xjoin-subgraph-utils";
 import config from "config";
 
-export type enumerationResolverArgs = {
+export type resolveEnumerationArgs = {
     body: Record<string, any>,
     limit: number,
     offset: number,
@@ -18,7 +18,7 @@ export type enumerationResolverArgs = {
     orderHow: string
 }
 
-export type enumerationResolverResponse = {
+export type resolveEnumerationResponse = {
     page: any,
     meta: {
         count: number,
@@ -26,62 +26,7 @@ export type enumerationResolverResponse = {
     }
 }
 
-export const emptyGraphQLResponse: Record<any, any> = {
-    data: [],
-    meta: {
-        count: 0,
-        total: 0
-    }
-}
-
-export function elasticsearchResponseTemplate(): Record<any, any> {
-    return {
-        took: 1,
-        timed_out: false,
-        _shards: {
-            'total': 3,
-            'successful': 3,
-            'skipped': 0,
-            'failed': 0
-        },
-        hits: {
-            total: {
-                value: 0,
-                relation: 'eq'
-            },
-            max_score: null,
-            hits: []
-        }
-    }
-}
-
-export function elasticsearchRequestTemplate(): Record<any, any> {
-    return {
-        "aggs": {
-            "terms": {
-                "terms": {
-                    "field": "host.tags_search",
-                    "size": 10000,
-                    "order": [
-                        {
-                            "_key": "ASC"
-                        }
-                    ],
-                    "show_term_doc_count_error": true
-                }
-            }
-        },
-        "query": {
-            "bool": {
-                "filter": []
-            }
-        },
-        "_source": [],
-        "size": 0
-    };
-}
-
-export async function resolveEnumeration(args: enumerationResolverArgs): Promise<enumerationResolverResponse> {
+export async function resolveEnumeration(args: resolveEnumerationArgs): Promise<resolveEnumerationResponse> {
     checkLimit(args.limit);
     checkOffset(args.offset);
 

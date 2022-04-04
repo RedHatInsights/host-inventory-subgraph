@@ -4,7 +4,8 @@ module.exports = {
     testEnvironment: 'node',
     extensionsToTreatAsEsm: ['.ts'],
     testMatch: [
-        '**/?(*.)+(test).ts'
+        '**/?(*.)+(test).ts',
+        '!**/?(*.)+(common.test).ts'
     ],
     globals: {
         'ts-jest': {

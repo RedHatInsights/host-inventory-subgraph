@@ -1,4 +1,4 @@
-import {resolveEnumeration, enumerationResolverResponse} from "./common.js";
+import {resolveEnumeration, resolveEnumerationResponse} from "./resolve.enumeration.js";
 
 export async function hostOperatingSystemsResolver(this: any, parent: any, args: any): Promise<Record<string, unknown>> {
     const ORDER_BY_MAPPING: { [key: string]: string } = {
@@ -20,7 +20,7 @@ export async function hostOperatingSystemsResolver(this: any, parent: any, args:
         }
     };
 
-    const enumerationResponse: enumerationResolverResponse = await resolveEnumeration({
+    const enumerationResponse: resolveEnumerationResponse = await resolveEnumeration({
         body: body,
         limit: args.limit,
         offset: args.offset,

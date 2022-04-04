@@ -1,4 +1,4 @@
-import {resolveEnumeration, enumerationResolverResponse} from "./common.js";
+import {resolveEnumeration, resolveEnumerationResponse} from "./resolve.enumeration.js";
 
 export async function hostTagsResolver(this: any, parent: any, args: any): Promise<Record<string, unknown>> {
     const TAG_ORDER_BY_MAPPING: { [key: string]: string } = {
@@ -27,7 +27,7 @@ export async function hostTagsResolver(this: any, parent: any, args: any): Promi
         }
     }
 
-    const enumerationResponse: enumerationResolverResponse = await resolveEnumeration({
+    const enumerationResponse: resolveEnumerationResponse = await resolveEnumeration({
         body: body,
         limit: args.limit,
         offset: args.offset,
