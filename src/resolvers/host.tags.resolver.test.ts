@@ -1,68 +1,14 @@
 import 'reflect-metadata';
-import {hostTagsResolver} from "./resolvers.js";
+import {hostTagsResolver} from "./host.tags.resolver.js";
 import {AvroSchemaParser, GraphqlSchema} from "xjoin-subgraph-utils";
 import config from "config";
 import nock from "nock";
+import {elasticsearchRequestTemplate, elasticsearchResponseTemplate, emptyGraphQLResponse} from "./common.js";
 
 const ES_URL: string = config.get('ElasticSearch.URL');
 const ES_USERNAME: string = config.get('ElasticSearch.Username');
 const ES_PASSWORD: string = config.get('ElasticSearch.Password');
 const ES_INDEX: string = config.get('ElasticSearch.Index');
-
-const emptyGraphQLResponse: Record<any, any> = {
-    data: [],
-    meta: {
-        count: 0,
-        total: 0
-    }
-}
-
-function elasticsearchResponseTemplate(): Record<any, any> {
-    return {
-        took: 1,
-        timed_out: false,
-        _shards: {
-            'total': 3,
-            'successful': 3,
-            'skipped': 0,
-            'failed': 0
-        },
-        hits: {
-            total: {
-                value: 0,
-                relation: 'eq'
-            },
-            max_score: null,
-            hits: []
-        }
-    }
-}
-
-function elasticsearchRequestTemplate(): Record<any, any> {
-    return {
-        "aggs": {
-            "terms": {
-                "terms": {
-                    "field": "host.tags_search",
-                    "size": 10000,
-                    "order": [
-                        {
-                            "_key": "ASC"
-                        }
-                    ],
-                    "show_term_doc_count_error": true
-                }
-            }
-        },
-        "query": {
-            "bool": {
-                "filter": []
-            }
-        },
-        "_source": [],
-        "size": 0
-    };
-}
 
 async function argumentTest(
     gqlArguments: Record<any, any>,
@@ -425,5 +371,27 @@ describe('hostTagsResolver', () => {
 
             await argumentTest(gqlArguments, elasticsearchRequestBody, elasticsearchResponseBody, generatedTags.gqlResponse);
         });
+    });
+
+    describe('host filter', () => {
+        test('transforms hostfilter argument into elasticsearch query', async () => {
+
+        });
+
+        test('transforms nested hostfilter argument into elasticsearch query', async () => {
+
+        });
+
+    });
+
+    describe('tag filter', () => {
+        test('transforms filter.search.eq argument into elasticsearch query', async () => {
+
+        });
+
+        test('transforms filter.search.regex argument into elasticsearch query', async () => {
+
+        });
+
     });
 });

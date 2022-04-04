@@ -11,7 +11,8 @@ import {
     GraphqlSchema,
     AvroSchemaParser
 } from "xjoin-subgraph-utils";
-import {hostOperatingSystemsResolver, hostTagsResolver} from "./resolvers.js";
+import {hostOperatingSystemsResolver} from "./resolvers/host.operating.systems.resolver.js";
+import {hostTagsResolver} from "./resolvers/host.tags.resolver.js";
 
 async function start() {
     const app = express();
