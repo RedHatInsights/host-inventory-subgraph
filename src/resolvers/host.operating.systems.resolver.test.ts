@@ -340,12 +340,52 @@ describe('hostOperatingSystemResolver', () => {
     });
 
     describe('host filter', () => {
-        test('transforms hostfilter argument into elasticsearch query', async () => {
-
+        test('transforms hostFilter argument into elasticsearch query', async () => {
+            const hostId = '1234';
+            const gqlArguments = {
+                hostFilter: {
+                    id: {
+                        eq: hostId
+                    }
+                },
+            };
+            const elasticsearchRequestBody = operatingSystemElasticsearchRequest();
+            elasticsearchRequestBody.query = {
+                bool: {
+                    filter: [{
+                        term: {
+                            'host.id': hostId
+                        }
+                    }]
+                }
+            }
+            await operatingSystemsArgumentTest(gqlArguments, elasticsearchRequestBody);
         });
 
-        test('transforms nested hostfilter argument into elasticsearch query', async () => {
-
+        test('transforms nested hostFilter argument into elasticsearch query', async () => {
+            const osName = 'RHEL';
+            const gqlArguments = {
+                hostFilter: {
+                    system_profile_facts: {
+                        operating_system: {
+                            name: {
+                                eq: osName
+                            }
+                        }
+                    }
+                }
+            };
+            const elasticsearchRequestBody = operatingSystemElasticsearchRequest();
+            elasticsearchRequestBody.query = {
+                bool: {
+                    filter: [{
+                        term: {
+                            'host.system_profile_facts.operating_system.name': osName
+                        }
+                    }]
+                }
+            }
+            await operatingSystemsArgumentTest(gqlArguments, elasticsearchRequestBody);
         });
 
     });

@@ -45,7 +45,7 @@ interface GeneratedTags {
     gqlResponse: TagGqlResponse
 }
 
-function generateTags(total: number, limit: number, offset: number): GeneratedTags {
+function generateTags(total: number, limit: number = 10, offset: number = 0): GeneratedTags {
     const buckets: ElasticsearchBucket[] = [];
     const gqlResponseData: TagGqlResponseData[] = [];
     for (let i = 0; i < total; i++) {
@@ -338,23 +338,84 @@ describe('hostTagsResolver', () => {
 
     describe('host filter', () => {
         test('transforms hostfilter argument into elasticsearch query', async () => {
-
+            const hostId = '1234';
+            const gqlArguments = {
+                hostFilter: {
+                    id: {
+                        eq: hostId
+                    }
+                },
+            };
+            const elasticsearchRequestBody = tagElasticsearchRequest();
+            elasticsearchRequestBody.query = {
+                bool: {
+                    filter: [{
+                        term: {
+                            'host.id': hostId
+                        }
+                    }]
+                }
+            }
+            await tagsArgumentTest(gqlArguments, elasticsearchRequestBody);
         });
 
         test('transforms nested hostfilter argument into elasticsearch query', async () => {
-
+            const osName = 'RHEL';
+            const gqlArguments = {
+                hostFilter: {
+                    system_profile_facts: {
+                        operating_system: {
+                            name: {
+                                eq: osName
+                            }
+                        }
+                    }
+                }
+            };
+            const elasticsearchRequestBody = tagElasticsearchRequest();
+            elasticsearchRequestBody.query = {
+                bool: {
+                    filter: [{
+                        term: {
+                            'host.system_profile_facts.operating_system.name': osName
+                        }
+                    }]
+                }
+            }
+            await tagsArgumentTest(gqlArguments, elasticsearchRequestBody);
         });
 
     });
 
     describe('tag filter', () => {
         test('transforms filter.search.eq argument into elasticsearch query', async () => {
+            const tagFilter = 'NS1';
+            const gqlArguments = {
+                filter: {
+                    search: {
+                        eq: tagFilter
+                    }
+                }
+            };
 
+            const elasticsearchRequestBody = tagElasticsearchRequest();
+            elasticsearchRequestBody.aggs.terms.terms.include = [tagFilter];
+            await tagsArgumentTest(gqlArguments, elasticsearchRequestBody);
         });
 
         test('transforms filter.search.regex argument into elasticsearch query', async () => {
+            const tagFilter = 'NS1';
+            const gqlArguments = {
+                filter: {
+                    search: {
+                        regex: tagFilter
+                    }
+                }
+            };
 
+            const elasticsearchRequestBody = tagElasticsearchRequest();
+            elasticsearchRequestBody.aggs.terms.terms.include = tagFilter;
+            await tagsArgumentTest(gqlArguments, elasticsearchRequestBody);
         });
-
     });
 });
