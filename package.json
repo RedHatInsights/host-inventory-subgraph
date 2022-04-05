@@ -8,6 +8,7 @@
   },
   "type": "module",
   "scripts": {
+    "coverage": "npm run build && NODE_OPTIONS=--experimental-vm-modules NODE_CONFIG_DIR=dist/config npx jest --coverage",
     "test": "npm run build && NODE_OPTIONS=--experimental-vm-modules NODE_CONFIG_DIR=dist/config npx jest",
     "clean": "rm -r dist",
     "build": "npx tsc",

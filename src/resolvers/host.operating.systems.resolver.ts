@@ -32,11 +32,6 @@ export async function hostOperatingSystemsResolver(this: any, parent: any, args:
     });
 
     const data = enumerationResponse.page.map(bucket => {
-        // Toss unknown and incomplete OS versions
-        if (bucket.key === '') {
-            return;
-        }
-
         const versionSplit = bucket.key.split(delimiter);
         return {
             operating_system: {

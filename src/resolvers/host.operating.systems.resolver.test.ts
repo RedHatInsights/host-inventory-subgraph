@@ -19,10 +19,10 @@ async function operatingSystemsArgumentTest(
 }
 
 async function operatingSystemsInvalidArgumentTest(
-    gqlArguments: Record<any, any>,
-    exceptionMessage: string) {
+    exceptionMessage: string,
+    gqlArguments: Record<any, any>) {
 
-    await invalidArgumentTest(hostOperatingSystemsResolver, gqlArguments, exceptionMessage);
+    await invalidArgumentTest(hostOperatingSystemsResolver, exceptionMessage, gqlArguments);
 }
 
 function operatingSystemElasticsearchRequest(): Record<any, any> {
@@ -179,14 +179,14 @@ describe('hostOperatingSystemResolver', () => {
             const gqlArguments = {
                 order_by: 'invalid'
             }
-            await operatingSystemsInvalidArgumentTest(gqlArguments, 'invalid order_by parameter: invalid');
+            await operatingSystemsInvalidArgumentTest('invalid order_by parameter: invalid', gqlArguments);
         });
 
         test('rejects invalid order_how argument', async () => {
             const gqlArguments = {
                 order_how: 'invalid'
             }
-            await operatingSystemsInvalidArgumentTest(gqlArguments, 'invalid order_how parameter: invalid');
+            await operatingSystemsInvalidArgumentTest('invalid order_how parameter: invalid', gqlArguments);
         });
     });
 
@@ -195,14 +195,14 @@ describe('hostOperatingSystemResolver', () => {
             const gqlArguments = {
                 limit: 101
             }
-            await operatingSystemsInvalidArgumentTest(gqlArguments, 'value must be 100 or less (was 101)');
+            await operatingSystemsInvalidArgumentTest('value must be 100 or less (was 101)', gqlArguments);
         });
 
         test('rejects invalid offset argument', async () => {
             const gqlArguments = {
                 offset: -1
             }
-            await operatingSystemsInvalidArgumentTest(gqlArguments, 'value must be 0 or greater (was -1)');
+            await operatingSystemsInvalidArgumentTest('value must be 0 or greater (was -1)', gqlArguments);
         });
 
         test('correctly applies limit argument', async () => {
@@ -387,6 +387,5 @@ describe('hostOperatingSystemResolver', () => {
             }
             await operatingSystemsArgumentTest(gqlArguments, elasticsearchRequestBody);
         });
-
     });
 });

@@ -1,4 +1,4 @@
-import nock from "nock";
+import nock, {Scope} from "nock";
 import config from "config";
 import {AvroSchemaParser, GraphqlSchema} from "xjoin-subgraph-utils";
 
@@ -61,26 +61,19 @@ export function elasticsearchRequestTemplate(): Record<any, any> {
     };
 }
 
-export async function argumentTest(
-    resolver: any,
-    gqlArguments: Record<any, any>,
-    elasticsearchRequestBody: Record<any, any>,
+export function mockElasticsearchSearchAPICall(
+    elasticsearchRequestBody?: Record<any, any>,
     elasticsearchResponseBody?: Record<any, any>,
-    gqlResponse?: Record<any, any>) {
-
-    const avroSchemaParser = new AvroSchemaParser(config.get("AvroSchema"));
-    const coreGraphqlSchema: GraphqlSchema = avroSchemaParser.convertToGraphQL();
-    const resolverBound = resolver.bind({coreGraphqlSchema: coreGraphqlSchema})
-
+): Scope {
     if (!elasticsearchResponseBody) {
         elasticsearchResponseBody = elasticsearchResponseTemplate();
     }
 
-    if (!gqlResponse) {
-        gqlResponse = emptyGraphQLResponse;
+    if (!elasticsearchRequestBody) {
+        elasticsearchRequestBody = {};
     }
 
-    const scope = nock(`${ES_URL}`)
+    return nock(`${ES_URL}`)
         .post(
             `/${ES_INDEX}/_search`,
             elasticsearchRequestBody,
@@ -91,31 +84,52 @@ export async function argumentTest(
             })
         .basicAuth({user: ES_USERNAME, pass: ES_PASSWORD})
         .reply(200, elasticsearchResponseBody, {'Content-Type': 'application/json'})
-
-    const resolverInfo = {
-        fieldName: 'test',
-        fieldNodes: [],
-        returnType: null,
-        parentType: null,
-        path: null,
-        schema: null,
-        fragments: {},
-        rootValue: null,
-        operation: null,
-        variableValues: {}
-    }
-
-    const response = await resolverBound({}, gqlArguments, null, resolverInfo);
-
-    expect(response).toStrictEqual(gqlResponse);
-    scope.done()
 }
 
-export async function invalidArgumentTest(resolver: any, gqlArguments: Record<any, any>, exceptionMessage: string) {
+export async function argumentTest(
+    resolver: any,
+    gqlArguments: Record<any, any>,
+    elasticsearchRequestBody: Record<any, any>,
+    elasticsearchResponseBody?: Record<any, any>,
+    gqlResponse?: Record<any, any>) {
+
+    const scope = mockElasticsearchSearchAPICall(elasticsearchRequestBody, elasticsearchResponseBody);
+
     const avroSchemaParser = new AvroSchemaParser(config.get("AvroSchema"));
     const coreGraphqlSchema: GraphqlSchema = avroSchemaParser.convertToGraphQL();
     const resolverBound = resolver.bind({coreGraphqlSchema: coreGraphqlSchema})
+
+    if (!gqlResponse) {
+        gqlResponse = emptyGraphQLResponse;
+    }
+
+    const response = await resolverBound({}, gqlArguments);
+
+    expect(response).toStrictEqual(gqlResponse);
+    scope.done();
+}
+
+export async function invalidArgumentTest(
+    resolver: any,
+    exceptionMessage: string,
+    gqlArguments?: Record<any, any>,
+    elasticsearchRequestBody?: Record<any, any>,
+    elasticsearchResponseBody?: Record<any, any>) {
+
+    let scope;
+    if (elasticsearchRequestBody && elasticsearchResponseBody) {
+        scope = mockElasticsearchSearchAPICall(elasticsearchRequestBody, elasticsearchResponseBody);
+    }
+
+    const avroSchemaParser = new AvroSchemaParser(config.get("AvroSchema"));
+    const coreGraphqlSchema: GraphqlSchema = avroSchemaParser.convertToGraphQL();
+    const resolverBound = resolver.bind({coreGraphqlSchema: coreGraphqlSchema})
+
     await expect(resolverBound({}, gqlArguments)).rejects.toThrow(exceptionMessage)
+
+    if (scope) {
+        scope.done();
+    }
 }
 
 export interface ElasticsearchBucket {

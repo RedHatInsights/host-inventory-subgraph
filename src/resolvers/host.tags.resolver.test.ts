@@ -17,10 +17,12 @@ async function tagsArgumentTest(
 }
 
 async function tagsInvalidArgumentTest(
+    exceptionMessage: string,
     gqlArguments: Record<any, any>,
-    exceptionMessage: string) {
+    elasticsearchRequestBody?: Record<any, any>,
+    elasticsearchResponseBody?: Record<any, any>) {
 
-    await invalidArgumentTest(hostTagsResolver, gqlArguments, exceptionMessage);
+    await invalidArgumentTest(hostTagsResolver, exceptionMessage, gqlArguments, elasticsearchRequestBody, elasticsearchResponseBody);
 }
 
 interface TagGqlResponseData {
@@ -38,7 +40,7 @@ interface TagGqlResponse {
         count: number,
         total: number
     }
-};
+}
 
 interface GeneratedTags {
     elasticsearchAggregation: ElasticsearchAggregation,
@@ -176,14 +178,14 @@ describe('hostTagsResolver', () => {
             const gqlArguments = {
                 order_by: 'invalid'
             }
-            await tagsInvalidArgumentTest(gqlArguments, 'invalid order_by parameter: invalid');
+            await tagsInvalidArgumentTest('invalid order_by parameter: invalid', gqlArguments);
         });
 
         test('rejects invalid order_how argument', async () => {
             const gqlArguments = {
                 order_how: 'invalid'
             }
-            await tagsInvalidArgumentTest(gqlArguments, 'invalid order_how parameter: invalid');
+            await tagsInvalidArgumentTest('invalid order_how parameter: invalid', gqlArguments);
         });
     });
 
@@ -192,14 +194,14 @@ describe('hostTagsResolver', () => {
             const gqlArguments = {
                 limit: 101
             }
-            await tagsInvalidArgumentTest(gqlArguments, 'value must be 100 or less (was 101)');
+            await tagsInvalidArgumentTest('value must be 100 or less (was 101)', gqlArguments);
         });
 
         test('rejects invalid offset argument', async () => {
             const gqlArguments = {
                 offset: -1
             }
-            await tagsInvalidArgumentTest(gqlArguments, 'value must be 0 or greater (was -1)');
+            await tagsInvalidArgumentTest('value must be 0 or greater (was -1)', gqlArguments);
         });
 
         test('correctly applies limit argument', async () => {
@@ -337,7 +339,7 @@ describe('hostTagsResolver', () => {
     });
 
     describe('host filter', () => {
-        test('transforms hostfilter argument into elasticsearch query', async () => {
+        test('transforms hostFilter argument into elasticsearch query', async () => {
             const hostId = '1234';
             const gqlArguments = {
                 hostFilter: {
@@ -359,7 +361,7 @@ describe('hostTagsResolver', () => {
             await tagsArgumentTest(gqlArguments, elasticsearchRequestBody);
         });
 
-        test('transforms nested hostfilter argument into elasticsearch query', async () => {
+        test('transforms nested hostFilter argument into elasticsearch query', async () => {
             const osName = 'RHEL';
             const gqlArguments = {
                 hostFilter: {
@@ -416,6 +418,87 @@ describe('hostTagsResolver', () => {
             const elasticsearchRequestBody = tagElasticsearchRequest();
             elasticsearchRequestBody.aggs.terms.terms.include = tagFilter;
             await tagsArgumentTest(gqlArguments, elasticsearchRequestBody);
+        });
+    });
+
+    describe('tag parsing', () => {
+        test('correctly parses tag with empty value', async () => {
+            const tag = 'ns/key=';
+            const elasticsearchAggregation = {
+                terms: {
+                    doc_count_error_upper_bound: 0,
+                    sum_other_doc_count: 0,
+                    buckets: [{
+                        key: tag,
+                        doc_count: 1,
+                        doc_count_error_upper_bound: 0
+                    }]
+                }
+            };
+
+            const gqlResponse = {
+                data: [
+                    {
+                        count: 1,
+                        tag: {
+                            key: 'key',
+                            namespace: 'ns',
+                            value: null
+                        }
+                    }
+                ],
+                meta: {
+                    count: 1,
+                    total: 1
+                }
+            }
+
+            const elasticsearchRequestBody = tagElasticsearchRequest();
+            const elasticsearchResponseBody = elasticsearchResponseTemplate();
+            elasticsearchResponseBody.aggregations = elasticsearchAggregation;
+            await tagsArgumentTest({}, elasticsearchRequestBody, elasticsearchResponseBody, gqlResponse);
+        });
+
+        test('throws an exception tag in elasticsearch is missing the / delimiter', async () => {
+            const tag = 'invalid';
+            const elasticsearchAggregation = {
+                terms: {
+                    doc_count_error_upper_bound: 0,
+                    sum_other_doc_count: 0,
+                    buckets: [{
+                        key: tag,
+                        doc_count: 1,
+                        doc_count_error_upper_bound: 0
+                    }]
+                }
+            };
+
+            const elasticsearchRequestBody = tagElasticsearchRequest();
+            const elasticsearchResponseBody = elasticsearchResponseTemplate();
+            elasticsearchResponseBody.aggregations = elasticsearchAggregation;
+
+            await tagsInvalidArgumentTest(`tag ${tag} does not contain delimiter /`, {}, elasticsearchRequestBody, elasticsearchResponseBody);
+        });
+
+        test('throws an exception when tag in elasticsearch is missing the = delimiter', async () => {
+            const tag = 'ns/invalid';
+            const elasticsearchAggregation = {
+                terms: {
+                    doc_count_error_upper_bound: 0,
+                    sum_other_doc_count: 0,
+                    buckets: [{
+                        key: tag,
+                        doc_count: 1,
+                        doc_count_error_upper_bound: 0
+                    }]
+                }
+            };
+
+            const elasticsearchRequestBody = tagElasticsearchRequest();
+            const elasticsearchResponseBody = elasticsearchResponseTemplate();
+            elasticsearchResponseBody.aggregations = elasticsearchAggregation;
+
+            await tagsInvalidArgumentTest(`tag ${tag} does not contain delimiter =`, {}, elasticsearchRequestBody, elasticsearchResponseBody);
         });
     });
 });

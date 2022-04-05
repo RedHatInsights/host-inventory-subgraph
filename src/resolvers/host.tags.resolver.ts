@@ -50,7 +50,7 @@ export async function hostTagsResolver(this: any, parent: any, args: any): Promi
             const index = value.indexOf(delimiter);
 
             if (index === -1) {
-                throw new Error(`cannot split ${value} using ${delimiter}`);
+                throw new Error(`tag ${bucket.key} does not contain delimiter ${delimiter}`);
             }
 
             return [value.substring(0, index), value.substring(index + 1)];
