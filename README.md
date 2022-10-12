@@ -2,6 +2,14 @@
 
 This is an implementation of a custom xjoin subgraph. It is based off the [xjoin-subgraph-template](https://github.com/RedHatInsights/xjoin-subgraph-template) repo.
 
+### Dependencies
+
+- Node.js v16
+- NPM 8.1.0
+- Typescript 4.6.2
+- A running instance of an [Apicurio schema registry](https://www.apicur.io/registry/)
+- A running instance of Elasticsearch
+
 ### Environment Variables
 
 | Name                     | Description                                                     | Default Value         |
