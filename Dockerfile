@@ -4,7 +4,7 @@ USER 1001
 
 ADD . $HOME
 
-RUN npm ci --ignore-scripts && tsc --project tsconfig.build.json
+RUN npm ci --ignore-scripts && npm run build
 
 EXPOSE 4000
 
