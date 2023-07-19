@@ -74,7 +74,7 @@ export async function resolveEnumeration(args: resolveEnumerationArgs): Promise<
         }
     }, config.get('ElasticSearch.Index'));
 
-    const result = await esClient.runQuery({
+    const result = await esClient.rawQuery({
         index: config.get('ElasticSearch.Index'),
         body: args.body
     });
