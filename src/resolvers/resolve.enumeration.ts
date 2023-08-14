@@ -6,6 +6,7 @@ import {
     graphqlFiltersToESFilters
 } from "xjoin-subgraph-utils";
 import config from "config";
+import {ClientOptions} from "@elastic/elasticsearch";
 
 export type resolveEnumerationArgs = {
     body: Record<string, any>,
@@ -63,16 +64,16 @@ export async function resolveEnumeration(args: resolveEnumerationArgs): Promise<
     args.body['_source'] = [];
     args.body.size = 0;
 
-    const username: string = config.get('ElasticSearch.Username');
-    const password: any = config.get('ElasticSearch.Password');
-
-    const esClient = new ElasticSearchClient({
+    const clientOptions: ClientOptions = {
         node: `${config.get('ElasticSearch.URL')}`,
-        auth: {
-            username: username,
-            password: password
+    };
+    if (config.get('ElasticSearch.Username') !== "" && config.get('ElasticSearch.Password') !== "") {
+        clientOptions.auth = {
+            username: config.get('ElasticSearch.Username'),
+            password: config.get('ElasticSearch.Password')
         }
-    }, config.get('ElasticSearch.Index'));
+    }
+    const esClient = new ElasticSearchClient(clientOptions, config.get('ElasticSearch.Index'));
 
     const result = await esClient.rawQuery({
         index: config.get('ElasticSearch.Index'),

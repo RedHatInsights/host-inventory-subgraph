@@ -2,8 +2,8 @@
   "Port": "4000",
   "ElasticSearch": {
     "URL": "http://localhost:9200",
-    "Username": "xjoin",
-    "Password": "xjoin1337",
+    "Username": "",
+    "Password": "",
     "Index": "xjoin.inventory.hosts"
   },
   "SchemaRegistry": {
