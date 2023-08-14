@@ -75,10 +75,7 @@ export async function resolveEnumeration(args: resolveEnumerationArgs): Promise<
     }
     const esClient = new ElasticSearchClient(clientOptions, config.get('ElasticSearch.Index'));
 
-    const result = await esClient.rawQuery({
-        index: config.get('ElasticSearch.Index'),
-        body: args.body
-    });
+    const result = await esClient.rawQuery(args.body);
 
     const page = extractPage(
         result?.body?.aggregations?.terms?.buckets || [],
