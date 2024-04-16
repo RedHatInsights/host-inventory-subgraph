@@ -2,6 +2,3 @@ dist
 node_modules
 logs
 coverage
-.docker
-.podman
-.kube
